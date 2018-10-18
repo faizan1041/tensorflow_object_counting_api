@@ -15,7 +15,6 @@ from utils import label_map_util
 # if tf.__version__ < '1.4.0':
 #   raise ImportError('Please upgrade your tensorflow installation to v1.4.* or later!')
 
-input_image = "image.jpg"
 
 # What model to download.
 MODEL_NAME = 'inference_graph'
@@ -30,25 +29,41 @@ PATH_TO_LABELS = os.path.join('training', 'labelmap.pbtxt')
 
 NUM_CLASSES = 2
 
+def count(image):
+  input_image = image
+  detection_graph = tf.Graph()
+  with detection_graph.as_default():
+    od_graph_def = tf.GraphDef()
+    with tf.gfile.GFile(PATH_TO_FROZEN_GRAPH, 'rb') as fid:
+      serialized_graph = fid.read()
+      od_graph_def.ParseFromString(serialized_graph)
+      tf.import_graph_def(od_graph_def, name='')
 
-detection_graph = tf.Graph()
-with detection_graph.as_default():
-  od_graph_def = tf.GraphDef()
-  with tf.gfile.GFile(PATH_TO_FROZEN_GRAPH, 'rb') as fid:
-    serialized_graph = fid.read()
-    od_graph_def.ParseFromString(serialized_graph)
-    tf.import_graph_def(od_graph_def, name='')
-
-label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
-categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
-category_index = label_map_util.create_category_index(categories)
+  label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
+  categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
+  category_index = label_map_util.create_category_index(categories)
 
 
-fps = 30 # change it with your input video fps
-width = 626 # change it with your input video width
-height = 360 # change it with your input vide height
-is_color_recognition_enabled = 0
+  fps = 30 # change it with your input video fps
+  width = 626 # change it with your input video width
+  height = 360 # change it with your input vide height
+  is_color_recognition_enabled = 0
 
-result = object_counting_api.single_image_object_counting(input_image, detection_graph, category_index, is_color_recognition_enabled, fps, width, height) # targeted objects counting
+  result = object_counting_api.single_image_object_counting(input_image, detection_graph, category_index, is_color_recognition_enabled, fps, width, height) # targeted objects counting
 
-print (result)
+  return result
+
+
+if __name__ == '__main__':
+    import argparse
+
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description='Detect number of objects')
+    parser.add_argument("image",
+                        metavar="<image>",
+                        help="'image'")
+    
+    args = parser.parse_args()
+
+    count(args.image)
